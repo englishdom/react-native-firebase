@@ -2,14 +2,15 @@
  * 
  * CollectionReference representation wrapper
  */
-import Query from './Query';
 import DocumentReference from './DocumentReference';
+import Query from './Query';
 import { firestoreAutoId } from '../../utils';
 
 /**
  * @class CollectionReference
  */
 export default class CollectionReference {
+
   constructor(firestore, collectionPath) {
     this._collectionPath = collectionPath;
     this._firestore = firestore;
@@ -26,7 +27,6 @@ export default class CollectionReference {
 
   get parent() {
     const parentPath = this._collectionPath.parent();
-
     return parentPath ? new DocumentReference(this._firestore, parentPath) : null;
   }
 
@@ -39,15 +39,14 @@ export default class CollectionReference {
     const newPath = documentPath || firestoreAutoId();
 
     const path = this._collectionPath.child(newPath);
-
     if (!path.isDocument) {
       throw new Error('Argument "documentPath" must point to a document.');
     }
 
     return new DocumentReference(this._firestore, path);
-  } // From Query
+  }
 
-
+  // From Query
   endAt(...snapshotOrVarArgs) {
     return this._query.endAt(snapshotOrVarArgs);
   }
@@ -83,5 +82,4 @@ export default class CollectionReference {
   where(fieldPath, opStr, value) {
     return this._query.where(fieldPath, opStr, value);
   }
-
 }

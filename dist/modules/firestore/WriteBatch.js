@@ -10,6 +10,7 @@ import { getNativeModule } from '../../utils/native';
  * @class WriteBatch
  */
 export default class WriteBatch {
+
   constructor(firestore) {
     this._firestore = firestore;
     this._writes = [];
@@ -37,7 +38,6 @@ export default class WriteBatch {
     // validate.isDocument('data', data);
     // validate.isOptionalPrecondition('options', writeOptions);
     const nativeData = buildNativeMap(data);
-
     this._writes.push({
       data: nativeData,
       options,
@@ -52,7 +52,6 @@ export default class WriteBatch {
     // TODO: Validation
     // validate.isDocumentReference('docRef', docRef);
     const data = parseUpdateArgs(args, 'WriteBatch.update');
-
     this._writes.push({
       data: buildNativeMap(data),
       path: docRef.path,
@@ -61,5 +60,4 @@ export default class WriteBatch {
 
     return this;
   }
-
 }

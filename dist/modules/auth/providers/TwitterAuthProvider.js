@@ -1,8 +1,11 @@
-/**
- * 
- * TwitterAuthProvider representation wrapper
- */
-const providerId = 'twitter.com';
+
+
+const providerId = 'twitter.com'; /**
+                                   * 
+                                   * TwitterAuthProvider representation wrapper
+                                   */
+
+
 export default class TwitterAuthProvider {
   constructor() {
     throw new Error('`new TwitterAuthProvider()` is not supported on the native Firebase SDKs.');
@@ -19,5 +22,4 @@ export default class TwitterAuthProvider {
       providerId
     };
   }
-
 }

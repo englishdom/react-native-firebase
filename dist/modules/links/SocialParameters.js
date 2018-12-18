@@ -3,38 +3,36 @@
  * SocialParameters representation wrapper
  */
 export default class SocialParameters {
+
   constructor(link) {
     this._link = link;
   }
+
   /**
    *
    * @param descriptionText
    * @returns {DynamicLink}
    */
-
-
   setDescriptionText(descriptionText) {
     this._descriptionText = descriptionText;
     return this._link;
   }
+
   /**
    *
    * @param imageUrl
    * @returns {DynamicLink}
    */
-
-
   setImageUrl(imageUrl) {
     this._imageUrl = imageUrl;
     return this._link;
   }
+
   /**
    *
    * @param title
    * @returns {DynamicLink}
    */
-
-
   setTitle(title) {
     this._title = title;
     return this._link;
@@ -47,5 +45,4 @@ export default class SocialParameters {
       title: this._title
     };
   }
-
 }

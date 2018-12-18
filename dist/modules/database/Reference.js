@@ -8,16 +8,19 @@ import OnDisconnect from './OnDisconnect';
 import { getLogger } from '../../utils/log';
 import { getNativeModule } from '../../utils/native';
 import ReferenceBase from '../../utils/ReferenceBase';
+
 import { promiseOrCallback, isFunction, isObject, isString, tryJSONParse, tryJSONStringify, generatePushID } from '../../utils';
+
 import SyncTree from '../../utils/SyncTree';
+
 // track all event registrations by path
 let listeners = 0;
+
 /**
  * Enum for event types
  * @readonly
  * @enum {String}
  */
-
 const ReferenceEventTypes = {
   value: 'value',
   child_added: 'child_added',
@@ -54,13 +57,16 @@ const ReferenceEventTypes = {
  * @extends ReferenceBase
  */
 export default class Reference extends ReferenceBase {
+
   constructor(database, path, existingModifiers) {
     super(path);
+    this._promise = null;
     this._refListeners = {};
     this._database = database;
     this._query = new Query(this, existingModifiers);
     getLogger(database).debug('Created new Reference', this._getRefKey());
   }
+
   /**
    * By calling `keepSynced(true)` on a location, the data for that location will
    * automatically be downloaded and kept in sync, even when no listeners are
@@ -71,11 +77,10 @@ export default class Reference extends ReferenceBase {
    * @param bool
    * @returns {*}
    */
-
-
   keepSynced(bool) {
     return getNativeModule(this._database).keepSynced(this._getRefKey(), this.path, this._query.getModifiers(), bool);
   }
+
   /**
    * Writes data to this Database location.
    *
@@ -84,11 +89,10 @@ export default class Reference extends ReferenceBase {
    * @param onComplete
    * @returns {Promise}
    */
-
-
   set(value, onComplete) {
     return promiseOrCallback(getNativeModule(this._database).set(this.path, this._serializeAnyType(value)), onComplete);
   }
+
   /**
    * Sets a priority for the data at this Database location.
    *
@@ -97,13 +101,12 @@ export default class Reference extends ReferenceBase {
    * @param onComplete
    * @returns {Promise}
    */
-
-
   setPriority(priority, onComplete) {
     const _priority = this._serializeAnyType(priority);
 
     return promiseOrCallback(getNativeModule(this._database).setPriority(this.path, _priority), onComplete);
   }
+
   /**
    * Writes data the Database location. Like set() but also specifies the priority for that data.
    *
@@ -113,15 +116,13 @@ export default class Reference extends ReferenceBase {
    * @param onComplete
    * @returns {Promise}
    */
-
-
   setWithPriority(value, priority, onComplete) {
     const _value = this._serializeAnyType(value);
-
     const _priority = this._serializeAnyType(priority);
 
     return promiseOrCallback(getNativeModule(this._database).setWithPriority(this.path, _value, _priority), onComplete);
   }
+
   /**
    * Writes multiple values to the Database at once.
    *
@@ -130,13 +131,12 @@ export default class Reference extends ReferenceBase {
    * @param onComplete
    * @returns {Promise}
    */
-
-
   update(val, onComplete) {
     const value = this._serializeObject(val);
 
     return promiseOrCallback(getNativeModule(this._database).update(this.path, value), onComplete);
   }
+
   /**
    * Removes the data at this Database location.
    *
@@ -144,11 +144,10 @@ export default class Reference extends ReferenceBase {
    * @param onComplete
    * @return {Promise}
    */
-
-
   remove(onComplete) {
     return promiseOrCallback(getNativeModule(this._database).remove(this.path), onComplete);
   }
+
   /**
    * Atomically modifies the data at this location.
    *
@@ -157,8 +156,6 @@ export default class Reference extends ReferenceBase {
    * @param onComplete
    * @param applyLocally
    */
-
-
   transaction(transactionUpdate, onComplete, applyLocally = false) {
     if (!isFunction(transactionUpdate)) {
       return Promise.reject(new Error('Missing transactionUpdate function argument.'));
@@ -179,12 +176,13 @@ export default class Reference extends ReferenceBase {
           committed,
           snapshot: new DataSnapshot(this, snapshotData)
         });
-      }; // start the transaction natively
+      };
 
-
+      // start the transaction natively
       this._database._transactionHandler.add(this, transactionUpdate, onCompleteWrapper, applyLocally);
     });
   }
+
   /**
    *
    * @param eventName
@@ -193,12 +191,8 @@ export default class Reference extends ReferenceBase {
    * @param context
    * @returns {Promise.<any>}
    */
-
-
   once(eventName = 'value', successCallback, cancelOrContext, context) {
-    return getNativeModule(this._database).once(this._getRefKey(), this.path, this._query.getModifiers(), eventName).then(({
-      snapshot
-    }) => {
+    return getNativeModule(this._database).once(this._getRefKey(), this.path, this._query.getModifiers(), eventName).then(({ snapshot }) => {
       const _snapshot = new DataSnapshot(this, snapshot);
 
       if (isFunction(successCallback)) {
@@ -213,35 +207,36 @@ export default class Reference extends ReferenceBase {
       throw error;
     });
   }
+
   /**
    *
    * @param value
    * @param onComplete
    * @returns {*}
    */
-
-
   push(value, onComplete) {
-    const name = generatePushID(this._database._serverTimeOffset);
-    const pushRef = this.child(name);
-    const thennablePushRef = this.child(name);
-    let promise;
-
-    if (value != null) {
-      promise = thennablePushRef.set(value, onComplete).then(() => pushRef);
-    } else {
-      promise = Promise.resolve(pushRef);
+    if (value === null || value === undefined) {
+      return new Reference(this._database, `${this.path}/${generatePushID(this._database._serverTimeOffset)}`);
     }
 
-    thennablePushRef.then = promise.then.bind(promise);
-    thennablePushRef.catch = promise.catch.bind(promise);
+    const newRef = new Reference(this._database, `${this.path}/${generatePushID(this._database._serverTimeOffset)}`);
+    const promise = newRef.set(value);
 
+    // if callback provided then internally call the set promise with value
     if (isFunction(onComplete)) {
-      promise.catch(() => {});
+      return promise
+      // $FlowExpectedError: Reports that onComplete can change to null despite the null check: https://github.com/facebook/flow/issues/1655
+      .then(() => onComplete(null, newRef))
+      // $FlowExpectedError: Reports that onComplete can change to null despite the null check: https://github.com/facebook/flow/issues/1655
+      .catch(error => onComplete(error, null));
     }
 
-    return thennablePushRef;
+    // otherwise attach promise to 'thenable' reference and return the
+    // new reference
+    newRef._setThenable(promise);
+    return newRef;
   }
+
   /**
    * MODIFIERS
    */
@@ -250,54 +245,47 @@ export default class Reference extends ReferenceBase {
    *
    * @returns {Reference}
    */
-
-
   orderByKey() {
     return this.orderBy('orderByKey');
   }
+
   /**
    *
    * @returns {Reference}
    */
-
-
   orderByPriority() {
     return this.orderBy('orderByPriority');
   }
+
   /**
    *
    * @returns {Reference}
    */
-
-
   orderByValue() {
     return this.orderBy('orderByValue');
   }
+
   /**
    *
    * @param key
    * @returns {Reference}
    */
-
-
   orderByChild(key) {
     return this.orderBy('orderByChild', key);
   }
+
   /**
    *
    * @param name
    * @param key
    * @returns {Reference}
    */
-
-
   orderBy(name, key) {
     const newRef = new Reference(this._database, this.path, this._query.getModifiers());
-
     newRef._query.orderBy(name, key);
-
     return newRef;
   }
+
   /**
    * LIMITS
    */
@@ -307,36 +295,31 @@ export default class Reference extends ReferenceBase {
    * @param limit
    * @returns {Reference}
    */
-
-
   limitToLast(limit) {
     return this.limit('limitToLast', limit);
   }
+
   /**
    *
    * @param limit
    * @returns {Reference}
    */
-
-
   limitToFirst(limit) {
     return this.limit('limitToFirst', limit);
   }
+
   /**
    *
    * @param name
    * @param limit
    * @returns {Reference}
    */
-
-
   limit(name, limit) {
     const newRef = new Reference(this._database, this.path, this._query.getModifiers());
-
     newRef._query.limit(name, limit);
-
     return newRef;
   }
+
   /**
    * FILTERS
    */
@@ -347,33 +330,30 @@ export default class Reference extends ReferenceBase {
    * @param key
    * @returns {Reference}
    */
-
-
   equalTo(value, key) {
     return this.filter('equalTo', value, key);
   }
+
   /**
    *
    * @param value
    * @param key
    * @returns {Reference}
    */
-
-
   endAt(value, key) {
     return this.filter('endAt', value, key);
   }
+
   /**
    *
    * @param value
    * @param key
    * @returns {Reference}
    */
-
-
   startAt(value, key) {
     return this.filter('startAt', value, key);
   }
+
   /**
    *
    * @param name
@@ -381,24 +361,20 @@ export default class Reference extends ReferenceBase {
    * @param key
    * @returns {Reference}
    */
-
-
   filter(name, value, key) {
     const newRef = new Reference(this._database, this.path, this._query.getModifiers());
-
     newRef._query.filter(name, value, key);
-
     return newRef;
   }
+
   /**
    *
    * @returns {OnDisconnect}
    */
-
-
   onDisconnect() {
     return new OnDisconnect(this);
   }
+
   /**
    * Creates a Reference to a child of the current Reference, using a relative path.
    * No validation is performed on the path to ensure it has a valid format.
@@ -407,29 +383,18 @@ export default class Reference extends ReferenceBase {
    * Reference
    * {@link https://firebase.google.com/docs/reference/js/firebase.database.Reference#child}
    */
-
-
   child(path) {
     return new Reference(this._database, `${this.path}/${path}`);
   }
+
   /**
    * Return the ref as a path string
    * @returns {string}
    */
-
-
   toString() {
-    return `${this._database.databaseUrl}${this.path}`;
+    return `${this._database.databaseUrl}/${this.path}`;
   }
-  /**
-   * Return a JSON-serializable representation of this object.
-   * @returns {string}
-   */
 
-
-  toJSON() {
-    return this.toString();
-  }
   /**
    * Returns whether another Reference represent the same location and are from the
    * same instance of firebase.app.App - multiple firebase apps not currently supported.
@@ -438,11 +403,10 @@ export default class Reference extends ReferenceBase {
    *
    * {@link https://firebase.google.com/docs/reference/js/firebase.database.Reference#isEqual}
    */
-
-
   isEqual(otherRef) {
     return !!otherRef && otherRef.constructor === Reference && otherRef.key === this.key && this._query.queryIdentifier() === otherRef._query.queryIdentifier();
   }
+
   /**
    * GETTERS
    */
@@ -453,34 +417,69 @@ export default class Reference extends ReferenceBase {
    *
    * {@link https://firebase.google.com/docs/reference/js/firebase.database.Reference#parent}
    */
-
-
   get parent() {
     if (this.path === '/') return null;
     return new Reference(this._database, this.path.substring(0, this.path.lastIndexOf('/')));
   }
+
   /**
    * A reference to itself
    * @type {!Reference}
    *
    * {@link https://firebase.google.com/docs/reference/js/firebase.database.Reference#ref}
    */
-
-
   get ref() {
     return this;
   }
+
   /**
    * Reference to the root of the database: '/'
    * @type {!Reference}
    *
    * {@link https://firebase.google.com/docs/reference/js/firebase.database.Reference#root}
    */
-
-
   get root() {
     return new Reference(this._database, '/');
   }
+
+  /**
+   * Access then method of promise if set
+   * @return {*}
+   */
+  then(fnResolve, fnReject) {
+    if (isFunction(fnResolve) && this._promise && this._promise.then) {
+      return this._promise.then.bind(this._promise)(result => {
+        this._promise = null;
+        return fnResolve(result);
+      }, possibleErr => {
+        this._promise = null;
+
+        if (isFunction(fnReject)) {
+          return fnReject(possibleErr);
+        }
+
+        throw possibleErr;
+      });
+    }
+
+    throw new Error("Cannot read property 'then' of undefined.");
+  }
+
+  /**
+   * Access catch method of promise if set
+   * @return {*}
+   */
+  catch(fnReject) {
+    if (isFunction(fnReject) && this._promise && this._promise.catch) {
+      return this._promise.catch.bind(this._promise)(possibleErr => {
+        this._promise = null;
+        return fnReject(possibleErr);
+      });
+    }
+
+    throw new Error("Cannot read property 'catch' of undefined.");
+  }
+
   /**
    * INTERNALS
    */
@@ -490,11 +489,10 @@ export default class Reference extends ReferenceBase {
    *
    * @return {string}
    */
-
-
   _getRegistrationKey(eventType) {
     return `$${this._database.databaseUrl}$/${this.path}$${this._query.queryIdentifier()}$${listeners}$${eventType}`;
   }
+
   /**
    * Generate a string that uniquely identifies this
    * combination of path and query modifiers
@@ -502,33 +500,39 @@ export default class Reference extends ReferenceBase {
    * @return {string}
    * @private
    */
-
-
   _getRefKey() {
     return `$${this._database.databaseUrl}$/${this.path}$${this._query.queryIdentifier()}`;
   }
+
+  /**
+   * Set the promise this 'thenable' reference relates to
+   * @param promise
+   * @private
+   */
+  _setThenable(promise) {
+    this._promise = promise;
+  }
+
   /**
    *
    * @param obj
    * @returns {Object}
    * @private
    */
-
-
   _serializeObject(obj) {
-    if (!isObject(obj)) return obj; // json stringify then parse it calls toString on Objects / Classes
-    // that support it i.e new Date() becomes a ISO string.
+    if (!isObject(obj)) return obj;
 
+    // json stringify then parse it calls toString on Objects / Classes
+    // that support it i.e new Date() becomes a ISO string.
     return tryJSONParse(tryJSONStringify(obj));
   }
+
   /**
    *
    * @param value
    * @returns {*}
    * @private
    */
-
-
   _serializeAnyType(value) {
     if (isObject(value)) {
       return {
@@ -542,6 +546,7 @@ export default class Reference extends ReferenceBase {
       value
     };
   }
+
   /**
    * Register a listener for data changes at the current ref's location.
    * The primary method of reading data from a Database.
@@ -568,8 +573,6 @@ export default class Reference extends ReferenceBase {
    *
    * {@link https://firebase.google.com/docs/reference/js/firebase.database.Reference#on}
    */
-
-
   on(eventType, callback, cancelCallbackOrContext, context) {
     if (!eventType) {
       throw new Error('Query.on failed: Function called with 0 arguments. Expects at least 2.');
@@ -596,11 +599,8 @@ export default class Reference extends ReferenceBase {
     }
 
     const eventRegistrationKey = this._getRegistrationKey(eventType);
-
     const registrationCancellationKey = `${eventRegistrationKey}$cancelled`;
-
     const _context = cancelCallbackOrContext && !isFunction(cancelCallbackOrContext) ? cancelCallbackOrContext : context;
-
     const registrationObj = {
       eventType,
       ref: this,
@@ -610,7 +610,9 @@ export default class Reference extends ReferenceBase {
       dbURL: this._database.databaseUrl,
       eventRegistrationKey
     };
-    SyncTree.addRegistration({ ...registrationObj,
+
+    SyncTree.addRegistration({
+      ...registrationObj,
       listener: _context ? callback.bind(_context) : callback
     });
 
@@ -629,9 +631,9 @@ export default class Reference extends ReferenceBase {
         eventRegistrationKey: registrationCancellationKey,
         listener: _context ? cancelCallbackOrContext.bind(_context) : cancelCallbackOrContext
       });
-    } // initialise the native listener if not already listening
+    }
 
-
+    // initialise the native listener if not already listening
     getNativeModule(this._database).on({
       eventType,
       path: this.path,
@@ -644,14 +646,17 @@ export default class Reference extends ReferenceBase {
         key: registrationObj.key,
         registrationCancellationKey
       }
-    }); // increment number of listeners - just a short way of making
+    });
+
+    // increment number of listeners - just s short way of making
     // every registration unique per .on() call
+    listeners += 1;
 
-    listeners += 1; // return original unbound successCallback for
+    // return original unbound successCallback for
     // the purposes of calling .off(eventType, callback) at a later date
-
     return callback;
   }
+
   /**
    * Detaches a callback previously attached with on().
    *
@@ -667,48 +672,57 @@ export default class Reference extends ReferenceBase {
    * @param eventType
    * @param originalCallback
    */
-
-
   off(eventType = '', originalCallback) {
     if (!arguments.length) {
       // Firebase Docs:
       //     if no eventType or callback is specified, all callbacks for the Reference will be removed.
       return SyncTree.removeListenersForRegistrations(SyncTree.getRegistrationsByPath(this.path));
     }
+
     /*
      * VALIDATE ARGS
      */
-
-
     if (eventType && (!isString(eventType) || !ReferenceEventTypes[eventType])) {
       throw new Error(`Query.off failed: First argument must be a valid string event type: "${Object.keys(ReferenceEventTypes).join(', ')}"`);
     }
 
     if (originalCallback && !isFunction(originalCallback)) {
       throw new Error('Query.off failed: Function called with 2 arguments, but second optional argument was not a function.');
-    } // Firebase Docs:
+    }
+
+    // Firebase Docs:
     //     Note that if on() was called
     //     multiple times with the same eventType and callback, the callback will be called
     //     multiple times for each event, and off() must be called multiple times to
     //     remove the callback.
     // Remove only a single registration
-
-
     if (eventType && originalCallback) {
       const registration = SyncTree.getOneByPathEventListener(this.path, eventType, originalCallback);
-      if (!registration) return []; // remove the paired cancellation registration if any exist
+      if (!registration) return [];
 
-      SyncTree.removeListenersForRegistrations([`${registration}$cancelled`]); // remove only the first registration to match firebase web sdk
+      // remove the paired cancellation registration if any exist
+      SyncTree.removeListenersForRegistrations([`${registration}$cancelled`]);
+
+      // remove only the first registration to match firebase web sdk
       // call multiple times to remove multiple registrations
-
       return SyncTree.removeListenerRegistrations(originalCallback, [registration]);
-    } // Firebase Docs:
+    }
+
+    // Firebase Docs:
     //     If a callback is not specified, all callbacks for the specified eventType will be removed.
-
-
     const registrations = SyncTree.getRegistrationsByPathEvent(this.path, eventType);
+
     SyncTree.removeListenersForRegistrations(SyncTree.getRegistrationsByPathEvent(this.path, `${eventType}$cancelled`));
+
     return SyncTree.removeListenersForRegistrations(registrations);
   }
-
 }
+
+// eslint-disable-next-line no-unused-vars
+// class ThenableReference<+R> extends Reference {
+//   then<U>(
+//     onFulfill?: (value: R) => Promise<U> | U,
+//     onReject?: (error: any) => Promise<U> | U
+//   ): Promise<U>;
+//   catch<U>(onReject?: (error: any) => Promise<U> | U): Promise<R | U>;
+// }

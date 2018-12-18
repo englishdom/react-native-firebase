@@ -5,6 +5,7 @@ export default {
   onAdClosed: 'onAdClosed',
   onAdFailedToLoad: 'onAdFailedToLoad'
 };
+
 export const NativeExpressEventTypes = {
   onVideoEnd: 'onVideoEnd',
   onVideoMute: 'onVideoMute',
@@ -12,6 +13,7 @@ export const NativeExpressEventTypes = {
   onVideoPlay: 'onVideoPlay',
   onVideoStart: 'onVideoStart'
 };
+
 export const RewardedVideoEventTypes = {
   onRewarded: 'onRewarded',
   onRewardedVideoStarted: 'onRewardedVideoStarted'

@@ -2,7 +2,9 @@ import INTERNALS from '../../../utils/internals';
 import { SharedEventEmitter } from '../../../utils/events';
 import { generatePushID, isFunction, isAndroid, isIOS, isString, nativeToJSError } from '../../../utils';
 import { getNativeModule } from '../../../utils/native';
+
 export default class PhoneAuthListener {
+
   /**
    *
    * @param auth
@@ -16,18 +18,20 @@ export default class PhoneAuthListener {
     this._resolve = null;
     this._promise = null;
     this._credential = null;
+
     this._timeout = timeout || 20; // 20 secs
-
     this._forceResending = forceResend || false;
-    this._phoneAuthRequestKey = generatePushID(); // internal events
+    this._phoneAuthRequestKey = generatePushID();
 
+    // internal events
     this._internalEvents = {
       codeSent: `phone:auth:${this._phoneAuthRequestKey}:onCodeSent`,
       verificationFailed: `phone:auth:${this._phoneAuthRequestKey}:onVerificationFailed`,
       verificationComplete: `phone:auth:${this._phoneAuthRequestKey}:onVerificationComplete`,
       codeAutoRetrievalTimeout: `phone:auth:${this._phoneAuthRequestKey}:onCodeAutoRetrievalTimeout`
-    }; // user observer events
+    };
 
+    // user observer events
     this._publicEvents = {
       // error cb
       error: `phone:auth:${this._phoneAuthRequestKey}:error`,
@@ -35,11 +39,12 @@ export default class PhoneAuthListener {
       event: `phone:auth:${this._phoneAuthRequestKey}:event`,
       // success cb
       success: `phone:auth:${this._phoneAuthRequestKey}:success`
-    }; // setup internal event listeners
+    };
 
-    this._subscribeToEvents(); // start verification flow natively
+    // setup internal event listeners
+    this._subscribeToEvents();
 
-
+    // start verification flow natively
     if (isAndroid) {
       getNativeModule(this._auth).verifyPhoneNumber(phoneNumber, this._phoneAuthRequestKey, this._timeout, this._forceResending);
     }
@@ -48,91 +53,84 @@ export default class PhoneAuthListener {
       getNativeModule(this._auth).verifyPhoneNumber(phoneNumber, this._phoneAuthRequestKey);
     }
   }
+
   /**
    * Subscribes to all EE events on this._internalEvents
    * @private
    */
-
-
   _subscribeToEvents() {
     const events = Object.keys(this._internalEvents);
 
     for (let i = 0, len = events.length; i < len; i++) {
       const type = events[i];
-      SharedEventEmitter.once(this._internalEvents[type], // $FlowExpectedError: Flow doesn't support indexable signatures on classes: https://github.com/facebook/flow/issues/1323
+      SharedEventEmitter.once(this._internalEvents[type],
+      // $FlowExpectedError: Flow doesn't support indexable signatures on classes: https://github.com/facebook/flow/issues/1323
       this[`_${type}Handler`].bind(this));
     }
   }
+
   /**
    * Subscribe a users listener cb to the snapshot events.
    * @param observer
    * @private
    */
-
-
   _addUserObserver(observer) {
     SharedEventEmitter.addListener(this._publicEvents.event, observer);
   }
+
   /**
    * Send a snapshot event to users event observer.
    * @param snapshot PhoneAuthSnapshot
    * @private
    */
-
-
   _emitToObservers(snapshot) {
     SharedEventEmitter.emit(this._publicEvents.event, snapshot);
   }
+
   /**
    * Send a error snapshot event to any subscribed errorCb's
    * @param snapshot
    * @private
    */
-
-
   _emitToErrorCb(snapshot) {
-    const {
-      error
-    } = snapshot;
+    const { error } = snapshot;
     if (this._reject) this._reject(error);
     SharedEventEmitter.emit(this._publicEvents.error, error);
   }
+
   /**
    * Send a success snapshot event to any subscribed completeCb's
    * @param snapshot
    * @private
    */
-
-
   _emitToSuccessCb(snapshot) {
     if (this._resolve) this._resolve(snapshot);
     SharedEventEmitter.emit(this._publicEvents.success, snapshot);
   }
+
   /**
    * Removes all listeners for this phone auth instance
    * @private
    */
-
-
   _removeAllListeners() {
     setTimeout(() => {
       // move to next event loop - not sure if needed
       // internal listeners
       Object.values(this._internalEvents).forEach(event => {
         SharedEventEmitter.removeAllListeners(event);
-      }); // user observer listeners
+      });
 
+      // user observer listeners
       Object.values(this._publicEvents).forEach(publicEvent => {
         SharedEventEmitter.removeAllListeners(publicEvent);
       });
     }, 0);
   }
+
   /**
    * Create a new internal deferred promise, if not already created
    * @private
    */
-
-
   _promiseDeferred() {
     if (!this._promise) {
       this._promise = new Promise((resolve, reject) => {
@@ -148,6 +146,7 @@ export default class PhoneAuthListener {
       });
     }
   }
+
   /* --------------------------
    --- INTERNAL EVENT HANDLERS
    ---------------------------- */
@@ -157,8 +156,6 @@ export default class PhoneAuthListener {
    * @private
    * @param credential
    */
-
-
   _codeSentHandler(credential) {
     const snapshot = {
       verificationId: credential.verificationId,
@@ -173,17 +170,17 @@ export default class PhoneAuthListener {
       this._emitToSuccessCb(snapshot);
     }
 
-    if (isAndroid) {// android can auto retrieve so we don't emit to successCb immediately,
+    if (isAndroid) {
+      // android can auto retrieve so we don't emit to successCb immediately,
       // if auto retrieve times out then that will emit to successCb
     }
   }
+
   /**
    * Internal code auto retrieve timeout event handler
    * @private
    * @param credential
    */
-
-
   _codeAutoRetrievalTimeoutHandler(credential) {
     const snapshot = {
       verificationId: credential.verificationId,
@@ -193,16 +190,14 @@ export default class PhoneAuthListener {
     };
 
     this._emitToObservers(snapshot);
-
     this._emitToSuccessCb(snapshot);
   }
+
   /**
    * Internal verification complete event handler
    * @param credential
    * @private
    */
-
-
   _verificationCompleteHandler(credential) {
     const snapshot = {
       verificationId: credential.verificationId,
@@ -212,18 +207,15 @@ export default class PhoneAuthListener {
     };
 
     this._emitToObservers(snapshot);
-
     this._emitToSuccessCb(snapshot);
-
     this._removeAllListeners();
   }
+
   /**
    * Internal verification failed event handler
    * @param state
    * @private
    */
-
-
   _verificationFailedHandler(state) {
     const snapshot = {
       verificationId: state.verificationId,
@@ -231,25 +223,18 @@ export default class PhoneAuthListener {
       error: null,
       state: 'error'
     };
-    const {
-      code,
-      message,
-      nativeErrorMessage
-    } = state.error;
-    snapshot.error = nativeToJSError(code, message, {
-      nativeErrorMessage
-    });
+
+    const { code, message, nativeErrorMessage } = state.error;
+    snapshot.error = nativeToJSError(code, message, { nativeErrorMessage });
 
     this._emitToObservers(snapshot);
-
     this._emitToErrorCb(snapshot);
-
     this._removeAllListeners();
   }
+
   /* -------------
    -- PUBLIC API
    --------------*/
-
 
   on(event, observer, errorCb, successCb) {
     if (!isString(event)) {
@@ -276,31 +261,26 @@ export default class PhoneAuthListener {
 
     return this;
   }
+
   /**
    * Promise .then proxy
    * @param fn
    */
-
-
   then(fn) {
-    this._promiseDeferred(); // $FlowFixMe: Unsure how to annotate `bind` here
-
-
+    this._promiseDeferred();
+    // $FlowFixMe: Unsure how to annotate `bind` here
     if (this._promise) return this._promise.then.bind(this._promise)(fn);
     return undefined; // will never get here - just to keep flow happy
   }
+
   /**
    * Promise .catch proxy
    * @param fn
    */
-
-
   catch(fn) {
-    this._promiseDeferred(); // $FlowFixMe: Unsure how to annotate `bind` here
-
-
+    this._promiseDeferred();
+    // $FlowFixMe: Unsure how to annotate `bind` here
     if (this._promise) return this._promise.catch.bind(this._promise)(fn);
     return undefined; // will never get here - just to keep flow happy
   }
-
 }

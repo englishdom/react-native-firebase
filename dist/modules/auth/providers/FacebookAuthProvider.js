@@ -1,8 +1,11 @@
-/**
- * 
- * FacebookAuthProvider representation wrapper
- */
-const providerId = 'facebook.com';
+
+
+const providerId = 'facebook.com'; /**
+                                    * 
+                                    * FacebookAuthProvider representation wrapper
+                                    */
+
+
 export default class FacebookAuthProvider {
   constructor() {
     throw new Error('`new FacebookAuthProvider()` is not supported on the native Firebase SDKs.');
@@ -19,5 +22,4 @@ export default class FacebookAuthProvider {
       providerId
     };
   }
-
 }

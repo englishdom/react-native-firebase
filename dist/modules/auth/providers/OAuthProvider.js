@@ -1,8 +1,11 @@
-/**
- * 
- * OAuthProvider representation wrapper
- */
-const providerId = 'oauth';
+
+
+const providerId = 'oauth'; /**
+                             * 
+                             * OAuthProvider representation wrapper
+                             */
+
+
 export default class OAuthProvider {
   constructor() {
     throw new Error('`new OAuthProvider()` is not supported on the native Firebase SDKs.');
@@ -19,5 +22,4 @@ export default class OAuthProvider {
       providerId
     };
   }
-
 }

@@ -4,7 +4,9 @@
  */
 import { Platform } from 'react-native';
 import AndroidInvitation from './AndroidInvitation';
+
 export default class Invitation {
+
   constructor(title, message) {
     this._android = new AndroidInvitation(this);
     this._message = message;
@@ -14,68 +16,62 @@ export default class Invitation {
   get android() {
     return this._android;
   }
+
   /**
    *
    * @param androidClientId
    * @returns {Invitation}
    */
-
-
   setAndroidClientId(androidClientId) {
     this._androidClientId = androidClientId;
     return this;
   }
+
   /**
    *
    * @param androidMinimumVersionCode
    * @returns {Invitation}
    */
-
-
   setAndroidMinimumVersionCode(androidMinimumVersionCode) {
     this._androidMinimumVersionCode = androidMinimumVersionCode;
     return this;
   }
+
   /**
    *
    * @param callToActionText
    * @returns {Invitation}
    */
-
-
   setCallToActionText(callToActionText) {
     this._callToActionText = callToActionText;
     return this;
   }
+
   /**
    *
    * @param customImage
    * @returns {Invitation}
    */
-
-
   setCustomImage(customImage) {
     this._customImage = customImage;
     return this;
   }
+
   /**
    *
    * @param deepLink
    * @returns {Invitation}
    */
-
-
   setDeepLink(deepLink) {
     this._deepLink = deepLink;
     return this;
   }
+
   /**
    *
    * @param iosClientId
    * @returns {Invitation}
    */
-
-
   setIOSClientId(iosClientId) {
     this._iosClientId = iosClientId;
     return this;
@@ -100,5 +96,4 @@ export default class Invitation {
       title: this._title
     };
   }
-
 }

@@ -8,7 +8,9 @@ import IOSParameters from './IOSParameters';
 import ITunesParameters from './ITunesParameters';
 import NavigationParameters from './NavigationParameters';
 import SocialParameters from './SocialParameters';
+
 export default class DynamicLink {
+
   constructor(link, dynamicLinkDomain) {
     this._analytics = new AnalyticsParameters(this);
     this._android = new AndroidParameters(this);
@@ -62,5 +64,4 @@ export default class DynamicLink {
       social: this._social.build()
     };
   }
-
 }

@@ -2,19 +2,20 @@
  * 
  * DocumentReference representation wrapper
  */
-import SnapshotError from './SnapshotError';
-import DocumentSnapshot from './DocumentSnapshot';
 import CollectionReference from './CollectionReference';
+import DocumentSnapshot from './DocumentSnapshot';
 import { parseUpdateArgs } from './utils';
 import { buildNativeMap } from './utils/serialize';
-import { getNativeModule } from '../../utils/native';
-import { firestoreAutoId, isFunction, isObject } from '../../utils';
 import { getAppEventName, SharedEventEmitter } from '../../utils/events';
+import { getLogger } from '../../utils/log';
+import { firestoreAutoId, isFunction, isObject } from '../../utils';
+import { getNativeModule } from '../../utils/native';
 
 /**
  * @class DocumentReference
  */
 export default class DocumentReference {
+
   constructor(firestore, documentPath) {
     this._documentPath = documentPath;
     this._firestore = firestore;
@@ -29,9 +30,8 @@ export default class DocumentReference {
   }
 
   get parent() {
-    const parentPath = this._documentPath.parent(); // $FlowExpectedError: parentPath can never be null
-
-
+    const parentPath = this._documentPath.parent();
+    // $FlowExpectedError: parentPath can never be null
     return new CollectionReference(this._firestore, parentPath);
   }
 
@@ -41,7 +41,6 @@ export default class DocumentReference {
 
   collection(collectionPath) {
     const path = this._documentPath.child(collectionPath);
-
     if (!path.isCollection) {
       throw new Error('Argument "collectionPath" must point to a collection.');
     }
@@ -57,26 +56,22 @@ export default class DocumentReference {
     if (options) {
       if (!isObject(options)) {
         return Promise.reject(new Error('DocumentReference.get failed: First argument must be an object.'));
-      }
-
-      if (options.source && options.source !== 'default' && options.source !== 'server' && options.source !== 'cache') {
+      } else if (options.source && options.source !== 'default' && options.source !== 'server' && options.source !== 'cache') {
         return Promise.reject(new Error('DocumentReference.get failed: GetOptions.source must be one of `default`, `server` or `cache`.'));
       }
     }
-
     return getNativeModule(this._firestore).documentGet(this.path, options).then(result => new DocumentSnapshot(this._firestore, result));
   }
 
   onSnapshot(optionsOrObserverOrOnNext, observerOrOnNextOrOnError, onError) {
     let observer;
-    let docListenOptions = {}; // Called with: onNext, ?onError
-
+    let docListenOptions = {};
+    // Called with: onNext, ?onError
     if (isFunction(optionsOrObserverOrOnNext)) {
       if (observerOrOnNextOrOnError && !isFunction(observerOrOnNextOrOnError)) {
         throw new Error('DocumentReference.onSnapshot failed: Second argument must be a valid function.');
-      } // $FlowExpectedError: Not coping with the overloaded method signature
-
-
+      }
+      // $FlowExpectedError: Not coping with the overloaded method signature
       observer = {
         next: optionsOrObserverOrOnNext,
         error: observerOrOnNextOrOnError
@@ -87,9 +82,8 @@ export default class DocumentReference {
         if (isFunction(optionsOrObserverOrOnNext.next)) {
           if (optionsOrObserverOrOnNext.error && !isFunction(optionsOrObserverOrOnNext.error)) {
             throw new Error('DocumentReference.onSnapshot failed: Observer.error must be a valid function.');
-          } // $FlowExpectedError: Not coping with the overloaded method signature
-
-
+          }
+          // $FlowExpectedError: Not coping with the overloaded method signature
           observer = {
             next: optionsOrObserverOrOnNext.next,
             error: optionsOrObserverOrOnNext.error
@@ -98,24 +92,23 @@ export default class DocumentReference {
           throw new Error('DocumentReference.onSnapshot failed: Observer.next must be a valid function.');
         }
       } else if (Object.prototype.hasOwnProperty.call(optionsOrObserverOrOnNext, 'includeMetadataChanges')) {
-        docListenOptions = optionsOrObserverOrOnNext; // Called with: Options, onNext, ?onError
-
+        docListenOptions = optionsOrObserverOrOnNext;
+        // Called with: Options, onNext, ?onError
         if (isFunction(observerOrOnNextOrOnError)) {
           if (onError && !isFunction(onError)) {
             throw new Error('DocumentReference.onSnapshot failed: Third argument must be a valid function.');
-          } // $FlowExpectedError: Not coping with the overloaded method signature
-
-
+          }
+          // $FlowExpectedError: Not coping with the overloaded method signature
           observer = {
             next: observerOrOnNextOrOnError,
             error: onError
-          }; // Called with Options, Observer
+          };
+          // Called with Options, Observer
         } else if (observerOrOnNextOrOnError && isObject(observerOrOnNextOrOnError) && observerOrOnNextOrOnError.next) {
           if (isFunction(observerOrOnNextOrOnError.next)) {
             if (observerOrOnNextOrOnError.error && !isFunction(observerOrOnNextOrOnError.error)) {
               throw new Error('DocumentReference.onSnapshot failed: Observer.error must be a valid function.');
             }
-
             observer = {
               next: observerOrOnNextOrOnError.next,
               error: observerOrOnNextOrOnError.error
@@ -132,34 +125,26 @@ export default class DocumentReference {
     } else {
       throw new Error('DocumentReference.onSnapshot failed: Called with invalid arguments.');
     }
-
     const listenerId = firestoreAutoId();
 
     const listener = nativeDocumentSnapshot => {
       const documentSnapshot = new DocumentSnapshot(this.firestore, nativeDocumentSnapshot);
       observer.next(documentSnapshot);
-    }; // Listen to snapshot events
-
-
-    const snapshotSubscription = SharedEventEmitter.addListener(getAppEventName(this._firestore, `onDocumentSnapshot:${listenerId}`), listener);
-    let unsubscribe; // listen for snapshot error events
-
-    const errorSubscription = SharedEventEmitter.addListener(getAppEventName(this._firestore, `onDocumentSnapshotError:${listenerId}`), e => {
-      if (unsubscribe) unsubscribe();
-      const error = new SnapshotError(e);
-      if (observer.error) observer.error(error);else this.firestore.log.error(error);
-    }); // Add the native listener
-
-    getNativeModule(this._firestore).documentOnSnapshot(this.path, listenerId, docListenOptions); // return an unsubscribe method
-
-    unsubscribe = () => {
-      snapshotSubscription.remove();
-      errorSubscription.remove(); // cancel native listener
-
-      getNativeModule(this._firestore).documentOffSnapshot(this.path, listenerId);
     };
 
-    return unsubscribe;
+    // Listen to snapshot events
+    SharedEventEmitter.addListener(getAppEventName(this._firestore, `onDocumentSnapshot:${listenerId}`), listener);
+
+    // Listen for snapshot error events
+    if (observer.error) {
+      SharedEventEmitter.addListener(getAppEventName(this._firestore, `onDocumentSnapshotError:${listenerId}`), observer.error);
+    }
+
+    // Add the native listener
+    getNativeModule(this._firestore).documentOnSnapshot(this.path, listenerId, docListenOptions);
+
+    // Return an unsubscribe method
+    return this._offDocumentSnapshot.bind(this, listenerId, listener);
   }
 
   set(data, options) {
@@ -173,4 +158,18 @@ export default class DocumentReference {
     return getNativeModule(this._firestore).documentUpdate(this.path, nativeData);
   }
 
+  /**
+   * INTERNALS
+   */
+
+  /**
+   * Remove document snapshot listener
+   * @param listener
+   */
+  _offDocumentSnapshot(listenerId, listener) {
+    getLogger(this._firestore).info('Removing onDocumentSnapshot listener');
+    SharedEventEmitter.removeListener(getAppEventName(this._firestore, `onDocumentSnapshot:${listenerId}`), listener);
+    SharedEventEmitter.removeListener(getAppEventName(this._firestore, `onDocumentSnapshotError:${listenerId}`), listener);
+    getNativeModule(this._firestore).documentOffSnapshot(this.path, listenerId);
+  }
 }

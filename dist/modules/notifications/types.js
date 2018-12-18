@@ -3,6 +3,7 @@ export const BadgeIconType = {
   None: 0,
   Small: 1
 };
+
 export const Category = {
   Alarm: 'alarm',
   Call: 'call',
@@ -20,17 +21,20 @@ export const Category = {
   System: 'system',
   Transport: 'transport'
 };
+
 export const Defaults = {
   All: -1,
   Lights: 4,
   Sound: 1,
   Vibrate: 2
 };
+
 export const GroupAlert = {
   All: 0,
   Children: 2,
   Summary: 1
 };
+
 export const Importance = {
   Default: 3,
   High: 4,
@@ -40,6 +44,7 @@ export const Importance = {
   None: 0,
   Unspecified: -1000
 };
+
 export const Priority = {
   Default: 0,
   High: 1,
@@ -47,6 +52,7 @@ export const Priority = {
   Max: 2,
   Min: -2
 };
+
 export const SemanticAction = {
   Archive: 5,
   Call: 10,
@@ -60,6 +66,7 @@ export const SemanticAction = {
   ThumbsUp: 8,
   Unmute: 7
 };
+
 export const Visibility = {
   Private: 0,
   Public: 1,

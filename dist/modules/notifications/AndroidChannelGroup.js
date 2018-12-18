@@ -1,8 +1,7 @@
-/**
- * 
- * AndroidChannelGroup representation wrapper
- */
+
+
 export default class AndroidChannelGroup {
+
   constructor(groupId, name) {
     this._groupId = groupId;
     this._name = name;
@@ -28,5 +27,7 @@ export default class AndroidChannelGroup {
       name: this._name
     };
   }
-
-}
+} /**
+   * 
+   * AndroidChannelGroup representation wrapper
+   */

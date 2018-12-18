@@ -2,40 +2,16 @@
  * 
  * FieldValue representation wrapper
  */
-import AnyJs from './utils/any'; // TODO: Salakar: Refactor in v6
 
 export default class FieldValue {
-  constructor(type, elements) {
-    this._type = type;
-    this._elements = elements;
-  }
-
-  get type() {
-    return this._type;
-  }
-
-  get elements() {
-    return this._elements;
-  }
-
   static delete() {
-    return new FieldValue(TypeFieldValueDelete);
+    return DELETE_FIELD_VALUE;
   }
 
   static serverTimestamp() {
-    return new FieldValue(TypeFieldValueTimestamp);
+    return SERVER_TIMESTAMP_FIELD_VALUE;
   }
-
-  static arrayUnion(...elements) {
-    return new FieldValue(TypeFieldValueUnion, elements);
-  }
-
-  static arrayRemove(...elements) {
-    return new FieldValue(TypeFieldValueRemove, elements);
-  }
-
 }
-export const TypeFieldValueDelete = 'delete';
-export const TypeFieldValueRemove = 'remove';
-export const TypeFieldValueUnion = 'union';
-export const TypeFieldValueTimestamp = 'timestamp';
+
+export const DELETE_FIELD_VALUE = new FieldValue();
+export const SERVER_TIMESTAMP_FIELD_VALUE = new FieldValue();

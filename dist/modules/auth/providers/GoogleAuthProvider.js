@@ -1,8 +1,11 @@
-/**
- * 
- * EmailAuthProvider representation wrapper
- */
-const providerId = 'google.com';
+
+
+const providerId = 'google.com'; /**
+                                  * 
+                                  * EmailAuthProvider representation wrapper
+                                  */
+
+
 export default class GoogleAuthProvider {
   constructor() {
     throw new Error('`new GoogleAuthProvider()` is not supported on the native Firebase SDKs.');
@@ -19,5 +22,4 @@ export default class GoogleAuthProvider {
       providerId
     };
   }
-
 }

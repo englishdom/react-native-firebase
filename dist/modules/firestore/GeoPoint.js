@@ -7,10 +7,12 @@
  * @class GeoPoint
  */
 export default class GeoPoint {
+
   constructor(latitude, longitude) {
     // TODO: Validation
     // validate.isNumber('latitude', latitude);
     // validate.isNumber('longitude', longitude);
+
     this._latitude = latitude;
     this._longitude = longitude;
   }
@@ -22,5 +24,4 @@ export default class GeoPoint {
   get longitude() {
     return this._longitude;
   }
-
 }

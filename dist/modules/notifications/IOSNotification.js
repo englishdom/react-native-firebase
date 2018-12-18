@@ -2,17 +2,12 @@
  * 
  * IOSNotification representation wrapper
  */
-import { isIOS } from '../../utils';
-import { getLogger } from '../../utils/log';
-import { getNativeModule } from '../../utils/native';
 export default class IOSNotification {
-  // alertAction | N/A
-  // N/A | attachments
-  // applicationIconBadgeNumber | badge
-  // hasAction | N/A
-  // alertLaunchImage | launchImageName
   // N/A | threadIdentifier
-  constructor(notification, notifications, data) {
+
+  // alertLaunchImage | launchImageName
+  // N/A | attachments
+  constructor(notification, data) {
     this._notification = notification;
 
     if (data) {
@@ -25,28 +20,12 @@ export default class IOSNotification {
       this._threadIdentifier = data.threadIdentifier;
     }
 
-    if (isIOS && notifications && notifications.ios) {
-      const complete = fetchResult => {
-        const {
-          notificationId
-        } = notification;
-
-        if (notificationId) {
-          getLogger(notifications).debug(`Completion handler called for notificationId=${notificationId}`);
-          getNativeModule(notifications).complete(notificationId, fetchResult);
-        }
-      };
-
-      if (notifications.ios.shouldAutoComplete) {
-        complete(notifications.ios.backgroundFetchResult.noData);
-      } else {
-        this._complete = complete;
-      }
-    } // Defaults
-
-
+    // Defaults
     this._attachments = this._attachments || [];
-  }
+  } // hasAction | N/A
+  // applicationIconBadgeNumber | badge
+  // alertAction | N/A
+
 
   get alertAction() {
     return this._alertAction;
@@ -76,9 +55,6 @@ export default class IOSNotification {
     return this._threadIdentifier;
   }
 
-  get complete() {
-    return this._complete;
-  }
   /**
    *
    * @param identifier
@@ -86,79 +62,70 @@ export default class IOSNotification {
    * @param options
    * @returns {Notification}
    */
-
-
   addAttachment(identifier, url, options) {
     this._attachments.push({
       identifier,
       options,
       url
     });
-
     return this._notification;
   }
+
   /**
    *
    * @param alertAction
    * @returns {Notification}
    */
-
-
   setAlertAction(alertAction) {
     this._alertAction = alertAction;
     return this._notification;
   }
+
   /**
    *
    * @param badge
    * @returns {Notification}
    */
-
-
   setBadge(badge) {
     this._badge = badge;
     return this._notification;
   }
+
   /**
    *
    * @param category
    * @returns {Notification}
    */
-
-
   setCategory(category) {
     this._category = category;
     return this._notification;
   }
+
   /**
    *
    * @param hasAction
    * @returns {Notification}
    */
-
-
   setHasAction(hasAction) {
     this._hasAction = hasAction;
     return this._notification;
   }
+
   /**
    *
    * @param launchImage
    * @returns {Notification}
    */
-
-
   setLaunchImage(launchImage) {
     this._launchImage = launchImage;
     return this._notification;
   }
+
   /**
    *
    * @param threadIdentifier
    * @returns {Notification}
    */
-
-
   setThreadIdentifier(threadIdentifier) {
     this._threadIdentifier = threadIdentifier;
     return this._notification;
@@ -166,6 +133,7 @@ export default class IOSNotification {
 
   build() {
     // TODO: Validation of required fields
+
     return {
       alertAction: this._alertAction,
       attachments: this._attachments,
@@ -176,5 +144,4 @@ export default class IOSNotification {
       threadIdentifier: this._threadIdentifier
     };
   }
-
 }

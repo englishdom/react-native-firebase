@@ -1,8 +1,11 @@
-/**
- * 
- * PhoneAuthProvider representation wrapper
- */
-const providerId = 'phone';
+
+
+const providerId = 'phone'; /**
+                             * 
+                             * PhoneAuthProvider representation wrapper
+                             */
+
+
 export default class PhoneAuthProvider {
   constructor() {
     throw new Error('`new PhoneAuthProvider()` is not supported on the native Firebase SDKs.');
@@ -19,5 +22,4 @@ export default class PhoneAuthProvider {
       providerId
     };
   }
-
 }

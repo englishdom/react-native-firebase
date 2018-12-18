@@ -12,17 +12,16 @@ export default class AdRequest {
 
   addTestDevice(deviceId) {
     this._props.testDevices.push(deviceId || 'DEVICE_ID_EMULATOR');
-
     return this;
   }
 
   addKeyword(keyword) {
     this._props.keywords.push(keyword);
-
     return this;
   }
 
-  setBirthday() {// TODO
+  setBirthday() {
+    // TODO
   }
 
   setContentUrl(url) {
@@ -32,15 +31,14 @@ export default class AdRequest {
 
   setGender(gender) {
     const genders = ['male', 'female', 'unknown'];
-
     if (genders.includes(gender)) {
       this._props.gender = gender;
     }
-
     return this;
   }
 
-  setLocation() {// TODO
+  setLocation() {
+    // TODO
   }
 
   setRequestAgent(requestAgent) {
@@ -57,5 +55,4 @@ export default class AdRequest {
     this._props.tagForChildDirectedTreatment = tagForChildDirectedTreatment;
     return this;
   }
-
 }

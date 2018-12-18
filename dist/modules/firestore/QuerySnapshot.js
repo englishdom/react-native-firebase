@@ -9,6 +9,7 @@ import DocumentSnapshot from './DocumentSnapshot';
  * @class QuerySnapshot
  */
 export default class QuerySnapshot {
+
   constructor(firestore, query, nativeData) {
     this._changes = nativeData.changes.map(change => new DocumentChange(firestore, change));
     this._docs = nativeData.documents.map(doc => new DocumentSnapshot(firestore, doc));
@@ -43,9 +44,9 @@ export default class QuerySnapshot {
   forEach(callback) {
     // TODO: Validation
     // validate.isFunction('callback', callback);
+
     this._docs.forEach(doc => {
       callback(doc);
     });
   }
-
 }

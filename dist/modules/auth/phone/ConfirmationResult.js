@@ -3,7 +3,10 @@
  * ConfirmationResult representation wrapper
  */
 import { getNativeModule } from '../../../utils/native';
+
+
 export default class ConfirmationResult {
+
   /**
    *
    * @param auth
@@ -13,13 +16,12 @@ export default class ConfirmationResult {
     this._auth = auth;
     this._verificationId = verificationId;
   }
+
   /**
    *
    * @param verificationCode
    * @return {*}
    */
-
-
   confirm(verificationCode) {
     return getNativeModule(this._auth)._confirmVerificationCode(verificationCode).then(user => this._auth._setUser(user));
   }
@@ -27,5 +29,4 @@ export default class ConfirmationResult {
   get verificationId() {
     return this._verificationId;
   }
-
 }

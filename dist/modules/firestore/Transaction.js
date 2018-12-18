@@ -4,8 +4,10 @@
  */
 import { parseUpdateArgs } from './utils';
 import { buildNativeMap } from './utils/serialize';
+
 import DocumentSnapshot from './DocumentSnapshot';
 import { getNativeModule } from '../../utils/native';
+
 // TODO docs state all get requests must be made FIRST before any modifications
 // TODO so need to validate that
 
@@ -13,12 +15,14 @@ import { getNativeModule } from '../../utils/native';
  * @class Transaction
  */
 export default class Transaction {
+
   constructor(firestore, meta) {
     this._meta = meta;
     this._commandBuffer = [];
     this._firestore = firestore;
     this._pendingResult = undefined;
   }
+
   /**
    * -------------
    * INTERNAL API
@@ -31,12 +35,11 @@ export default class Transaction {
    *
    * @private
    */
-
-
   _prepare() {
     this._commandBuffer = [];
     this._pendingResult = undefined;
   }
+
   /**
    * -------------
    *  PUBLIC API
@@ -50,12 +53,11 @@ export default class Transaction {
    *
    * @returns Promise<DocumentSnapshot>
    */
-
-
   get(documentRef) {
     // todo validate doc ref
     return getNativeModule(this._firestore).transactionGetDocument(this._meta.id, documentRef.path).then(result => new DocumentSnapshot(this._firestore, result));
   }
+
   /**
    * Writes to the document referred to by the provided DocumentReference.
    * If the document does not exist yet, it will be created. If you pass options,
@@ -69,8 +71,6 @@ export default class Transaction {
    *
    * @returns {Transaction}
    */
-
-
   set(documentRef, data, options) {
     // todo validate doc ref
     // todo validate data is object
@@ -83,6 +83,7 @@ export default class Transaction {
 
     return this;
   }
+
   /**
    * Updates fields in the document referred to by this DocumentReference.
    * The update will fail if applied to a document that does not exist. Nested
@@ -95,12 +96,9 @@ export default class Transaction {
    *
    * @returns {Transaction}
    */
-
-
   update(documentRef, ...args) {
     // todo validate doc ref
     const data = parseUpdateArgs(args, 'Transaction.update');
-
     this._commandBuffer.push({
       type: 'update',
       path: documentRef.path,
@@ -109,6 +107,7 @@ export default class Transaction {
 
     return this;
   }
+
   /**
    * Deletes the document referred to by the provided DocumentReference.
    *
@@ -116,8 +115,6 @@ export default class Transaction {
    *
    * @returns {Transaction}
    */
-
-
   delete(documentRef) {
     // todo validate doc ref
     this._commandBuffer.push({
@@ -127,5 +124,4 @@ export default class Transaction {
 
     return this;
   }
-
 }

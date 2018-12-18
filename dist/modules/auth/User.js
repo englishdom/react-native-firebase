@@ -4,7 +4,9 @@
  */
 import INTERNALS from '../../utils/internals';
 import { getNativeModule } from '../../utils/native';
+
 export default class User {
+
   /**
    *
    * @param auth Instance of Authentication class
@@ -14,10 +16,10 @@ export default class User {
     this._auth = auth;
     this._user = user;
   }
+
   /**
    * PROPERTIES
    */
-
 
   get displayName() {
     return this._user.displayName || null;
@@ -58,6 +60,7 @@ export default class User {
   get uid() {
     return this._user.uid;
   }
+
   /**
    * METHODS
    */
@@ -66,91 +69,79 @@ export default class User {
    * Delete the current user
    * @return {Promise}
    */
-
-
   delete() {
     return getNativeModule(this._auth).delete().then(() => {
       this._auth._setUser();
     });
   }
+
   /**
-   * Returns a JWT token used to identify the user to a Firebase service.
-   *
-   * @param forceRefresh boolean Force refresh regardless of token expiration.
-   * @return {Promise<string>}
+   * get the token of current user
+   * @return {Promise}
    */
-
-
   getIdToken(forceRefresh = false) {
-    return getNativeModule(this._auth).getIdToken(forceRefresh);
+    return getNativeModule(this._auth).getToken(forceRefresh);
   }
+
   /**
-   * Returns a IdTokenResult object which contains the ID token JWT string and other properties for getting
-   * data associated with the token and all the decoded payload claims.
-   *
-   * @param forceRefresh boolean Force refresh regardless of token expiration.
-   * @return {Promise<IdTokenResult>}
+   * get the token of current user
+   * @deprecated Deprecated getToken in favor of getIdToken.
+   * @return {Promise}
    */
-
-
-  getIdTokenResult(forceRefresh = false) {
-    return getNativeModule(this._auth).getIdTokenResult(forceRefresh);
+  getToken(forceRefresh = false) {
+    console.warn('Deprecated firebase.User.prototype.getToken in favor of firebase.User.prototype.getIdToken.');
+    return getNativeModule(this._auth).getToken(forceRefresh);
   }
+
   /**
+   * @deprecated Deprecated linkWithCredential in favor of linkAndRetrieveDataWithCredential.
    * @param credential
    */
-
-
   linkWithCredential(credential) {
-    return getNativeModule(this._auth).linkWithCredential(credential.providerId, credential.token, credential.secret).then(userCredential => this._auth._setUserCredential(userCredential));
+    console.warn('Deprecated firebase.User.prototype.linkWithCredential in favor of firebase.User.prototype.linkAndRetrieveDataWithCredential.');
+    return getNativeModule(this._auth).linkWithCredential(credential.providerId, credential.token, credential.secret).then(user => this._auth._setUser(user));
   }
+
   /**
-   * @deprecated Deprecated linkAndRetrieveDataWithCredential in favor of linkWithCredential.
+   *
    * @param credential
    */
-
-
   linkAndRetrieveDataWithCredential(credential) {
-    console.warn('Deprecated linkAndRetrieveDataWithCredential in favor of linkWithCredential.');
-    return getNativeModule(this._auth).linkWithCredential(credential.providerId, credential.token, credential.secret).then(userCredential => this._auth._setUserCredential(userCredential));
+    return getNativeModule(this._auth).linkAndRetrieveDataWithCredential(credential.providerId, credential.token, credential.secret).then(userCredential => this._auth._setUserCredential(userCredential));
   }
+
   /**
    * Re-authenticate a user with a third-party authentication provider
    * @return {Promise}         A promise resolved upon completion
    */
-
-
   reauthenticateWithCredential(credential) {
-    return getNativeModule(this._auth).reauthenticateWithCredential(credential.providerId, credential.token, credential.secret).then(userCredential => this._auth._setUserCredential(userCredential));
+    console.warn('Deprecated firebase.User.prototype.reauthenticateWithCredential in favor of firebase.User.prototype.reauthenticateAndRetrieveDataWithCredential.');
+    return getNativeModule(this._auth).reauthenticateWithCredential(credential.providerId, credential.token, credential.secret).then(user => {
+      this._auth._setUser(user);
+    });
   }
+
   /**
    * Re-authenticate a user with a third-party authentication provider
-   *
-   * @deprecated Deprecated reauthenticateAndRetrieveDataWithCredential in favor of reauthenticateWithCredential.
    * @return {Promise}         A promise resolved upon completion
    */
-
-
   reauthenticateAndRetrieveDataWithCredential(credential) {
-    console.warn('Deprecated reauthenticateAndRetrieveDataWithCredential in favor of reauthenticateWithCredential.');
-    return getNativeModule(this._auth).reauthenticateWithCredential(credential.providerId, credential.token, credential.secret).then(userCredential => this._auth._setUserCredential(userCredential));
+    return getNativeModule(this._auth).reauthenticateAndRetrieveDataWithCredential(credential.providerId, credential.token, credential.secret).then(userCredential => this._auth._setUserCredential(userCredential));
   }
+
   /**
    * Reload the current user
    * @return {Promise}
    */
-
-
   reload() {
     return getNativeModule(this._auth).reload().then(user => {
       this._auth._setUser(user);
     });
   }
+
   /**
    * Send verification email to current user.
    */
-
-
   sendEmailVerification(actionCodeSettings) {
     return getNativeModule(this._auth).sendEmailVerification(actionCodeSettings).then(user => {
       this._auth._setUser(user);
@@ -160,70 +151,53 @@ export default class User {
   toJSON() {
     return Object.assign({}, this._user);
   }
+
   /**
    *
    * @param providerId
    * @return {Promise.<TResult>|*}
    */
-
-
   unlink(providerId) {
     return getNativeModule(this._auth).unlink(providerId).then(user => this._auth._setUser(user));
   }
+
   /**
    * Update the current user's email
    *
    * @param  {string} email The user's _new_ email
    * @return {Promise}       A promise resolved upon completion
    */
-
-
   updateEmail(email) {
     return getNativeModule(this._auth).updateEmail(email).then(user => {
       this._auth._setUser(user);
     });
   }
+
   /**
    * Update the current user's password
    * @param  {string} password the new password
    * @return {Promise}
    */
-
-
   updatePassword(password) {
     return getNativeModule(this._auth).updatePassword(password).then(user => {
       this._auth._setUser(user);
     });
   }
-  /**
-   * Update the current user's phone number
-   *
-   * @param  {AuthCredential} credential Auth credential with the _new_ phone number
-   * @return {Promise}
-   */
 
-
-  updatePhoneNumber(credential) {
-    return getNativeModule(this._auth).updatePhoneNumber(credential.providerId, credential.token, credential.secret).then(user => {
-      this._auth._setUser(user);
-    });
-  }
   /**
    * Update the current user's profile
    * @param  {Object} updates An object containing the keys listed [here](https://firebase.google.com/docs/auth/ios/manage-users#update_a_users_profile)
    * @return {Promise}
    */
-
-
   updateProfile(updates = {}) {
     return getNativeModule(this._auth).updateProfile(updates).then(user => {
       this._auth._setUser(user);
     });
   }
+
   /**
    * KNOWN UNSUPPORTED METHODS
    */
-
 
   linkWithPhoneNumber() {
     throw new Error(INTERNALS.STRINGS.ERROR_UNSUPPORTED_CLASS_METHOD('User', 'linkWithPhoneNumber'));
@@ -249,8 +223,11 @@ export default class User {
     throw new Error(INTERNALS.STRINGS.ERROR_UNSUPPORTED_CLASS_METHOD('User', 'reauthenticateWithRedirect'));
   }
 
+  updatePhoneNumber() {
+    throw new Error(INTERNALS.STRINGS.ERROR_UNSUPPORTED_CLASS_METHOD('User', 'updatePhoneNumber'));
+  }
+
   get refreshToken() {
     throw new Error(INTERNALS.STRINGS.ERROR_UNSUPPORTED_CLASS_PROPERTY('User', 'refreshToken'));
   }
-
 }

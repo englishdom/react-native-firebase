@@ -8,6 +8,7 @@ import DocumentSnapshot from './DocumentSnapshot';
  * @class DocumentChange
  */
 export default class DocumentChange {
+
   constructor(firestore, nativeData) {
     this._document = new DocumentSnapshot(firestore, nativeData.document);
     this._newIndex = nativeData.newIndex;
@@ -30,5 +31,4 @@ export default class DocumentChange {
   get type() {
     return this._type;
   }
-
 }

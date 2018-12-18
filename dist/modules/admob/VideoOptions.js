@@ -13,5 +13,4 @@ export default class VideoOptions {
     this._props.startMuted = muted;
     return this;
   }
-
 }
