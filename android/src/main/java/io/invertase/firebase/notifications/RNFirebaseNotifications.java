@@ -52,11 +52,11 @@ public class RNFirebaseNotifications extends ReactContextBaseJavaModule implemen
 
     // Subscribe to remote notification events
     localBroadcastManager.registerReceiver(new RemoteNotificationReceiver(),
-      new IntentFilter(RNFirebaseMessagingService.REMOTE_NOTIFICATION_EVENT));
+            new IntentFilter(RNFirebaseMessagingService.REMOTE_NOTIFICATION_EVENT));
 
     // Subscribe to scheduled notification events
     localBroadcastManager.registerReceiver(new ScheduledNotificationReceiver(),
-      new IntentFilter(RNFirebaseNotificationManager.SCHEDULED_NOTIFICATION_EVENT));
+            new IntentFilter(RNFirebaseNotificationManager.SCHEDULED_NOTIFICATION_EVENT));
   }
 
   @Override
@@ -89,7 +89,11 @@ public class RNFirebaseNotifications extends ReactContextBaseJavaModule implemen
   @ReactMethod
   public void getInitialNotification(Promise promise) {
     WritableMap notificationOpenMap = null;
-    if (getCurrentActivity() != null) {
+    Log.d(TAG, "getInitialNotification");
+    if (receivedIntent != null) {
+      notificationOpenMap = parseIntentForNotification(receivedIntent);
+      receivedIntent = null;
+    } else if (getCurrentActivity() != null) {
       notificationOpenMap = parseIntentForNotification(getCurrentActivity().getIntent());
     }
     promise.resolve(notificationOpenMap);
@@ -189,10 +193,14 @@ public class RNFirebaseNotifications extends ReactContextBaseJavaModule implemen
     // FCM functionality does not need this function
   }
 
+  private Intent receivedIntent;
+
   @Override
   public void onNewIntent(Intent intent) {
+    Log.d(TAG, "onNewIntent");
     WritableMap notificationOpenMap = parseIntentForNotification(intent);
     if (notificationOpenMap != null) {
+      receivedIntent = new Intent(intent);
       Utils.sendEvent(getReactApplicationContext(), "notifications_notification_opened", notificationOpenMap);
     }
   }
@@ -202,6 +210,7 @@ public class RNFirebaseNotifications extends ReactContextBaseJavaModule implemen
   //////////////////////////////////////////////////////////////////////
 
   private WritableMap parseIntentForNotification(Intent intent) {
+    Log.d(TAG, "parseIntentForNotification");
     WritableMap notificationOpenMap = parseIntentForRemoteNotification(intent);
     if (notificationOpenMap == null) {
       notificationOpenMap = parseIntentForLocalNotification(intent);
@@ -231,6 +240,7 @@ public class RNFirebaseNotifications extends ReactContextBaseJavaModule implemen
   private WritableMap parseIntentForRemoteNotification(Intent intent) {
     // Check if FCM data exists
     if (intent.getExtras() == null || !intent.hasExtra("google.message_id")) {
+      Log.d(TAG, "notification not found");
       return null;
     }
 
@@ -240,16 +250,22 @@ public class RNFirebaseNotifications extends ReactContextBaseJavaModule implemen
     WritableMap dataMap = Arguments.createMap();
 
     for (String key : extras.keySet()) {
-      if (key.equals("google.message_id")) {
-        notificationMap.putString("notificationId", extras.getString(key));
-      } else if (key.equals("collapse_key")
-        || key.equals("from")
-        || key.equals("google.sent_time")
-        || key.equals("google.ttl")
-        || key.equals("_fbSourceApplicationHasBeenSet")) {
-        // ignore known unneeded fields
-      } else {
-        dataMap.putString(key, extras.getString(key));
+      try {
+        if (key.equals("google.message_id")) {
+          notificationMap.putString("notificationId", extras.getString(key));
+        } else if (key.equals("collapse_key")
+                || key.equals("ACTIVITY_PARAMS_BUNDLE")
+                || key.equals("from")
+                || key.equals("google.sent_time")
+                || key.equals("google.ttl")
+                || key.equals("_fbSourceApplicationHasBeenSet")) {
+          // ignore known unneeded fields
+        } else {
+          Log.d(TAG, key + " type is " + extras.get(key).getClass().getName());
+          dataMap.putString(key, extras.getString(key));
+        }
+      } catch (Throwable t) {
+
       }
     }
     notificationMap.putMap("data", dataMap);
@@ -258,6 +274,7 @@ public class RNFirebaseNotifications extends ReactContextBaseJavaModule implemen
     notificationOpenMap.putString("action", intent.getAction());
     notificationOpenMap.putMap("notification", notificationMap);
 
+    Log.d(TAG, "notification is ready");
     return notificationOpenMap;
   }
 
